@@ -11,8 +11,8 @@
 | 功能 | 说明 |
 | --- | --- |
 | **自然语言 → 分析报告** | 输入业务问题,自动拆解需求、编写 SQL、安全执行、生成报告 |
-| **四类输出形态** | Markdown 报告 / PDF 报告(含图表) / 交互式看板(可下钻) / 简洁问答(只要答案) |
-| **多会话对话** | 左侧会话栏:新建 / 置顶 / 重命名 / 删除 / 切换;消息与报告持久化,随时回放 |
+| **输出形态** | Markdown 报告 / PDF 报告(含图表) / 交互式看板(可下钻) |
+| **多会话对话** | 消息与报告持久化,随时回放 |
 | **人机协同审批** | 敏感表查询、大结果集、显式要求时挂起,审批人批准后从断点继续 |
 | **指标口径锁定** | 平台维护核心指标语义目录,跨任务统计口径一致,杜绝口径漂移 |
 | **数据血缘溯源** | 报告附录展示每步查询的来源表/行数/耗时,结果可追溯 |
@@ -25,7 +25,7 @@
 | **定时任务 + 结果推送** | 管理员配置 cron 定时分析(APScheduler 内嵌,随应用启动),完成后站内通知推送(顶栏铃铛,未读角标) |
 | **审计合规** | 操作日志按筛选导出 CSV 归档;**append-only 不可清空**,满足等保/GDPR 追溯 |
 | **管理员运营看板** | 任务统计、Token 与成本、节点明细、进程内指标(重启清零) |
-| **MCP 集成** | 接入 PostgreSQL MCP Server(只读):按需表结构检索 + 复杂 SQL EXPLAIN 预检,提升首轮正确率 |
+| **MCP 集成** | 接入 PostgreSQL MCP Server:按需表结构检索 + 复杂 SQL EXPLAIN 预检,提升首轮正确率 |
 
 ### 一次分析的完整流程
 
@@ -39,14 +39,6 @@
         → Reporter 生成执行摘要/图表/明细/建议 → MD + PDF + 看板
 ```
 
-### 安全设计
-
-- **SQL 三层防护**:关键字只读校验 → 会话级只读事务(物理不可写) → 沙箱隔离
-- **沙箱隔离**:Docker 容器无网络、CPU/内存受限、30s 超时、非 root、一次性销毁
-- **敏感数据**:身份证/手机号等敏感列查询强制人工审批;日志脱敏
-- **审计合规**:全事件落 `audit_logs`(操作者/IP/前后状态快照),满足等保/GDPR 追溯
-
----
 
 ## 二、技术栈
 
@@ -92,7 +84,7 @@
 
 ## 四、快速启动
 
-### 方式一:Docker Compose 部署(中间件用本地服务)
+### Docker Compose 部署(中间件用本地服务)
 
 前提:宿主机已运行本地中间件 —— **PostgreSQL(5433)、Redis(6379)、Chroma(8000)**。
 
@@ -105,21 +97,6 @@ docker compose up -d --build
 
 - 前端页面 + FastAPI: http://localhost:8001(`/docs` 即 Swagger)
 
-### 方式二:本地开发(宿主机)
-
-```bash
-poetry install                # 安装依赖(已在 .venv)
-docker build -f sandbox.Dockerfile -t data-sandbox:v1 . # 沙箱镜像
-
-# 后端(注意: 必须用 --reload-dir src 限定热重载范围, 否则 .venv 变化会触发无限重启)
-.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8001 --reload --reload-dir src
-
-# 前端开发模式(可选)
-cd web && npm install && npm run dev   # Vite :5173, /api 与 /static 代理到 8001
-```
-
-> 生产模式:浏览器访问 `http://localhost:8001`;前端开发模式:访问 `http://localhost:5173`。
-> 修改前端后需 `npm run build` 重新构建,后端才会托管新产物。
 
 ### 环境依赖
 
@@ -173,7 +150,7 @@ cd web && npm install && npm run dev   # Vite :5173, /api 与 /static 代理到 
 | 使用教程(日常操作指南) | `data/使用教程.md` |
 | 开发指南 | `docs/developer_guide.md` |
 
-## 七、开发规范要点
+## 七、开发要点
 
 - **结构化输出**:LLM 节点使用提示词约束 JSON + Pydantic 校验,不依赖模型 `response_format`;解析失败自动降级。
 - **安全执行**:Executor 强制 SQL 只读校验;SQL 由本地只读事务执行,Python 代码走 Docker 沙箱。
