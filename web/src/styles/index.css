@@ -1,0 +1,51 @@
+/* 全局样式: 现代管理后台风格 */
+:root {
+  --brand: #4f46e5;
+  --brand-dark: #4338ca;
+  --sidebar-width: 220px;
+  --content-bg: #f5f6fa;
+  --card-shadow: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+* { box-sizing: border-box; }
+
+html, body, #app {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
+  background: var(--content-bg);
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 通用卡片 */
+.panel-card {
+  background: #fff;
+  border: 1px solid #eceff5;
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+  padding: 20px 24px;
+}
+
+/* 统计卡 */
+.stat-card {
+  background: #fff;
+  border: 1px solid #eceff5;
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+  padding: 18px 22px;
+  border-top: 3px solid var(--brand);
+  transition: transform 0.15s ease;
+}
+.stat-card:hover { transform: translateY(-2px); }
+.stat-card .num { font-size: 26px; font-weight: 700; color: #111827; line-height: 1.2; }
+.stat-card .lbl { font-size: 13px; color: #6b7280; margin-top: 4px; }
+
+/* 页面标题区 */
+.page-header { margin-bottom: 18px; }
+.page-header h2 { margin: 0 0 4px; font-size: 20px; font-weight: 700; }
+.page-header p { margin: 0; color: #6b7280; font-size: 13px; }
+
+/* 表格/弹窗圆角 */
+.el-card, .el-table, .el-dialog, .el-message-box { border-radius: 12px; }

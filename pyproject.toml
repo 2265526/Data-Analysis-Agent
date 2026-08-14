@@ -1,0 +1,77 @@
+[tool.poetry]
+name = "data-pipeline-agent"
+version = "0.1.0"
+description = "企业级数据分析多智能体平台"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+# Agent 核心
+langgraph = "*"
+langchain = "*"
+langchain-openai = "*"
+
+# LLM HTTP 客户端: socks 代理支持(用户网络经 socks5 代理访问模型服务, 需 httpx[socks]/socksio)
+httpx = {extras = ["socks"], version = "*"}
+
+# Web 服务
+fastapi = "*"
+uvicorn = {extras = ["standard"], version = "*"}
+
+# MCP: PostgreSQL MCP Server 客户端(postgres-mcp restricted 只读模式, EXPLAIN 预检/按需 schema)
+mcp = "*"
+postgres-mcp = "*"
+fastmcp = "*"
+
+# 任务队列
+celery = "*"
+apscheduler = ">=3.10,<4"
+redis = "*"
+
+# 数据库
+sqlalchemy = "*"
+psycopg2-binary = "*"
+alembic = "*"
+
+# 向量检索
+chromadb = "*"
+
+# 沙箱操控
+docker = "*"      # docker-py
+
+# 配置与日志
+pydantic = "*"
+pydantic-settings = "*"
+structlog = "*"
+python-dotenv = "*"
+
+# 容错重试
+tenacity = "*"
+circuitbreaker = "*"
+filelock = "*"
+
+# 报告生成
+matplotlib = "*"
+plotly = "*"
+jinja2 = "*"
+weasyprint = "*"
+
+# 安全加密
+cryptography = "*"
+
+# 测试评估
+pytest = "*"
+pytest-asyncio = "*"
+ragas = "*"
+locust = "*"
+
+[tool.poetry.group.dev.dependencies]
+# 开发工具（可选）
+pre-commit = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

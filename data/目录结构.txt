@@ -1,0 +1,117 @@
+data-pipeline-agent/
+├── docker-compose.yml          # 一键拉起依赖服务(Postgres/Redis/Chroma/App)
+├── Dockerfile                  # 应用镜像构建
+├── sandbox.Dockerfile          # 沙箱镜像(data-sandbox:v1)
+├── .env                        # 环境变量模板
+├── pyproject.toml              # Poetry 依赖管理
+├── README.md                   # 项目说明与快速启动
+├── main.py                     # FastAPI 应用入口(挂载静态、API 路由)
+├── reasonix.toml               # Agent 工作区配置
+│
+├── src/
+│   ├── __init__.py
+│   ├── state.py                # 全局状态 TypedDict 定义(PipelineState)
+│   ├── graph.py                # LangGraph 状态图编排/Checkpointer/execute_task/resume_task
+│   │
+│   ├── models/                 # SQLAlchemy ORM 模型
+│   │   ├── __init__.py
+│   │   ├── task.py             # 任务状态表
+│   │   ├── audit.py            # 审计日志表
+│   │   ├── user.py             # 用户/角色
+│   │   ├── chat_session.py     # 会话与消息
+│   │   ├── data_source.py      # 数据源配置(加密存储)
+│   │   ├── data_policy.py      # 数据级权限(表/列/行)
+│   │   ├── metric_definition.py# 指标口径目录
+│   │   ├── model_routes.py     # 模型路由配置
+│   │   ├── query_run.py        # SQL 执行血缘记录
+│   │   ├── task_node_runs.py   # 节点运行记录(耗时/Token/行数)
+│   │   ├── scheduled_task.py   # 定时任务
+│   │   ├── notification.py     # 站内通知
+│   │   ├── schema_dict.py      # 数据字典(列中文名)
+│   │   └── cost_records.py     # 成本记录
+│   │
+│   ├── api/                    # FastAPI 路由(版本 /api/v1)
+│   │   ├── __init__.py
+│   │   ├── auth.py             # 认证(JWT)
+│   │   ├── deps.py             # 依赖注入(DB、Redis)
+│   │   ├── bootstrap.py        # 启动引导(建表/种子)
+│   │   └── routes.py           # 任务/会话/审批/看板/下钻/管理/定时任务
+│   │
+│   ├── nodes/                  # 智能体节点函数
+│   │   ├── __init__.py         # make_llm(代理归一化)/模型路由
+│   │   ├── supervisor.py       # 意图路由(planner/reporter/FINISH)
+│   │   ├── planner.py          # 任务拆解
+│   │   ├── clarifier.py        # 需求澄清
+│   │   ├── coder.py            # LLM 生成 SQL(时间范围提示注入/缓存防跨天)
+│   │   ├── executor.py         # 沙箱执行(时间语义拦截/大结果集审批/exec_full 落盘)
+│   │   ├── reporter.py         # 报告生成(TimeRange 消费/质量校验两道关卡/看板/下钻口径)
+│   │   └── human_approval.py   # 人机协同挂起/恢复
+│   │
+│   ├── sandbox/                # 安全执行引擎
+│   │   ├── __init__.py
+│   │   ├── local_sandbox.py    # 本地只读执行(小结果集全量输出+STATS 聚合)
+│   │   └── docker_sandbox.py   # Docker 容器隔离(网络/资源限制)
+│   │
+│   ├── tools/                  # 辅助工具
+│   │   ├── __init__.py
+│   │   ├── chart_gen.py        # 图表生成(柱/饼/帕累托/趋势/TOP-N, 轴标签参数化)
+│   │   ├── sql_validator.py    # SQL 只读校验/敏感表识别
+│   │   ├── metric_registry.py  # 指标口径目录(加载/检索/catalog_prompt)
+│   │   ├── data_policy.py      # 数据权限强制(表/列/行级 SQL 改写)
+│   │   ├── data_source.py      # 数据源连接串解析
+│   │   ├── schema_provider.py  # 表结构获取(parse_db_url 等)
+│   │   ├── schema_retriever.py # Chroma 向量检索(历史成功代码)
+│   │   ├── mcp_client.py       # postgres-mcp 适配(按需表结构/复杂 SQL 预检)
+│   │   ├── lineage.py          # 血缘溯源(query_runs 写入)
+│   │   └── scheduler.py        # 定时任务调度
+│   │
+│   └── utils/                  # 基础设施
+│       ├── __init__.py
+│       ├── settings.py         # 统一配置(pydantic-settings)
+│       ├── intent.py           # 意图解析 + parse_time_range(TimeRange 一等公民)
+│       ├── context_window.py   # 多轮上下文管理
+│       ├── aux_llm.py          # 辅助 LLM 调用
+│       ├── model_router.py     # 模型路由
+│       ├── cache.py            # 结果缓存(Redis)
+│       ├── chat_gate.py        # 会话消息门
+│       ├── circuit.py          # 熔断器
+│       ├── rate_limit.py       # 限流
+│       ├── costing.py          # 成本核算
+│       ├── run_records.py      # 节点运行记录落库
+│       ├── notifier.py         # 站内通知
+│       ├── metrics.py          # Prometheus 进程内指标
+│       ├── logger.py           # structlog 结构化日志(脱敏)
+│       └── security.py         # AES-256 加密、数据脱敏
+│
+├── docs/                       # 文档中心
+│   ├── PRD.md
+│   ├── developer_guide.md
+│   ├── data_permission.md
+│   ├── api_openapi.yaml
+│   └── 实习生入门指南.md
+│
+├── data/                       # 设计文档
+│   ├── 需求分析.docx
+│   ├── 数据库设计.docx
+│   ├── 技术实现方案.docx
+│   ├── 测试用例.docx
+│   ├── 使用教程.md
+│   └── 目录结构.txt
+│
+├── scripts/                    # 运维辅助脚本
+│   ├── seed_metrics.py         # 指标口径种子
+│   ├── ab_mcp.py               # MCP 开关 A/B 量化
+│   ├── gen_docs_requirement.py # 文档生成
+│   ├── cleanup_reports.py      # 定期清理报告
+│   ├── healthcheck_sandbox.py  # 沙箱容器巡检
+│   └── seed_chroma.py          # 预置向量库数据
+│
+├── static/
+│   └── reports/                # 报告产物(YYYY/MM/DD 分层 + {task_id}.board.json/exec_full.txt)
+│
+├── web/                        # 前端(Vite + 静态产物 dist)
+│
+└── tests/                      # 测试与评估
+    ├── unit/                   # 单元测试(pytest 249 用例)
+    ├── integration/            # 集成测试(审批流等)
+    └── evaluation/

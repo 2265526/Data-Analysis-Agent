@@ -1,0 +1,31 @@
+# ===== 密钥与本地配置(不上传) =====
+.env
+reasonix.toml
+
+# ===== 离线操作/本地运维脚本(不上传) =====
+scripts/
+
+# ===== 运行时数据(不上传) =====
+chroma_data/
+logs/
+static/reports/
+
+# ===== Python =====
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# ===== 前端依赖与构建产物 =====
+web/node_modules/
+web/dist/
+
+# ===== 本地验证工具 =====
+web/verify_chat.cjs
+
+# ===== IDE / 残留 =====
+.idea/
+.streamlit/
+:memory:
+data/pyproject.toml
+data/poetry.lock

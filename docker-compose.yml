@@ -1,0 +1,57 @@
+# ============================================================================
+# Data Pipeline Agent — 轻量编排(中间件全部使用宿主机本地服务)
+#
+#   App 容器内连接宿主机中间件, 通过 host.docker.internal 访问:
+#     PostgreSQL : host.docker.internal:5432   (本地 5432)
+#     Redis      : host.docker.internal:6379   (本地 6379)
+#     Chroma     : host.docker.internal:8000   (本地 8000)
+#   (Linux 需 extra_hosts: host.docker.internal -> host-gateway, 已配置)
+#
+# 使用:
+#   docker compose up -d --build      # 构建 App 镜像 + 沙箱镜像, 拉起 App
+#   docker compose logs -f app        # 跟踪应用日志
+# ============================================================================
+name: data-pipeline-agent
+
+services:
+  # --------------------------------------------------------------------------
+  # sandbox-builder — 仅构建沙箱镜像(构建完即退出), App 依赖其产物 data-sandbox:v1
+  # --------------------------------------------------------------------------
+  sandbox-builder:
+    build:
+      context: .
+      dockerfile: sandbox.Dockerfile
+    image: ${SANDBOX_IMAGE:-data-sandbox:v1}
+    container_name: data-sandbox-builder
+    restart: "no"
+    command: ["echo", "沙箱镜像已构建: ${SANDBOX_IMAGE:-data-sandbox:v1}"]
+
+  # --------------------------------------------------------------------------
+  # App — FastAPI(8001, 同源托管前端页面) 与智能体编排, 直连宿主机本地中间件
+  # --------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-app
+    env_file:
+      - .env
+    environment:
+      # 容器内访问宿主机: 覆盖 .env 中的 localhost 配置
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-236591}@host.docker.internal:5432/${POSTGRES_DB:-postgres}
+      REDIS_URL: redis://host.docker.internal:6379/0
+      CHROMA_HOST: host.docker.internal
+      CHROMA_PORT: "8000"
+      SANDBOX_IMAGE: ${SANDBOX_IMAGE:-data-sandbox:v1}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${APP_PORT:-8001}:8001"           # 前端页面 + FastAPI / Swagger(同源托管)
+    volumes:
+      - ./static/reports:/app/static/reports   # 报告产物持久化
+      - /var/run/docker.sock:/var/run/docker.sock  # 沙箱容器编排
+    depends_on:
+      sandbox-builder:
+        condition: service_completed_successfully
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
+    restart: unless-stopped

@@ -1,0 +1,134 @@
+openapi: 3.0.3
+info:
+  title: Data Pipeline Agent API
+  description: 企业级数据分析多智能体平台 — 自然语言 -> 自动化分析报告
+  version: 0.1.0
+servers:
+  - url: http://localhost:8001
+paths:
+  /health:
+    get:
+      summary: 健康检查
+      operationId: healthCheck
+      responses:
+        "200":
+          description: 服务正常
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  service:
+                    type: string
+                    example: data-pipeline-agent
+  /api/v1/tasks:
+    post:
+      summary: 提交分析任务
+      operationId: submitTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query]
+              properties:
+                query:
+                  type: string
+                  minLength: 2
+                  maxLength: 5000
+                  example: 计算近7天用户留存率,并与上周对比
+      responses:
+        "200":
+          description: 提交成功, 返回 task_id
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task_id:
+                    type: string
+                    example: 3f2a1c5e-9d8b-4f6e-b7a2-1c0d9e8f7a6b
+                  status:
+                    type: string
+                    example: pending
+  /api/v1/tasks/{task_id}/status:
+    get:
+      summary: 轮询任务状态
+      operationId: getTaskStatus
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 任务状态
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task_id:
+                    type: string
+                  status:
+                    type: string
+                    enum: [pending, running, awaiting_approval, completed, failed]
+                  progress:
+                    type: string
+                  result_path:
+                    type: string
+                    nullable: true
+                  summary:
+                    type: string
+                    nullable: true
+                  error_log:
+                    type: string
+                    nullable: true
+        "404":
+          description: 任务不存在
+  /api/v1/tasks/{task_id}/approve:
+    post:
+      summary: 人机协同审批回调
+      operationId: approveTask
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [approved, approver]
+              properties:
+                approved:
+                  type: boolean
+                  example: true
+                approver:
+                  type: string
+                  example: zhangsan
+                comment:
+                  type: string
+                  example: 结果集较大, 同意继续
+      responses:
+        "200":
+          description: 审批成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task_id:
+                    type: string
+                  approved:
+                    type: boolean
+        "409":
+          description: 任务不在待审批状态
